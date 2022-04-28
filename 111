@@ -1,0 +1,38 @@
+#question one
+rm(list = ls())#clear all variables
+not_cancel <-flights %>%
+  filter(!is.na(arr_delay),!is.na(dep_delay))
+
+worst_delay<-not_cancel%>%
+  group_by(dest)%>%summarise(n=median(arr_delay))
+worst_delay1<-worst_delay%>%
+  arrange(n,decrease=T)%>%head(10)#worst_delay1 is the 10 worst dests
+#question two
+not_cancel<-not_cancel%>%
+  filter(dest==worst_delay1$dest)
+ggplot(data=not_cancel,mapping = aes(x=dest,y=arr_delay))+geom_boxplot()
+#question three
+not_cancel<-not_cancel%>%
+  mutate(delay=ifelse(arr_delay<1,"<1h",ifelse(arr_delay>3,">3h","1h-3h")))
+perc=not_cancel%>%
+  group_by(dest,delay)%>%summarise(perc_sum=n())
+p1=perc%>%
+  filter(delay=="<1h")
+p2=perc%>%
+  filter(delay=="1h-3h")
+p3=perc%>%
+  filter(delay==">3h")
+p4<-inner_join(p1,p2,by=c("dest"))
+perc<-inner_join(p4,p3,by=c("dest"))
+perc<-perc%>%
+  mutate(sum=perc_sum.x+perc_sum.y+perc_sum)%>%mutate(pro_1h=perc_sum.x/sum)%>%mutate(pro_1h_3h=perc_sum.y/sum)%>%mutate(pro_3h=perc_sum/sum)
+
+#question four
+data<-flights%>%
+  filter(month==10)
+carrier_m10<-data%>%
+  group_by(day,carrier)%>%summarise(n=n())
+carrier_m10<-carrier_m10%>%
+  group_by(carrier)%>%summarise(n=n())
+carrier_not_everyday<-carrier_m10%>%filter(n<30)#notfly everyday
+#hA is the carrier
